@@ -179,8 +179,7 @@ export const FileMentionAutocomplete = React.forwardRef<FileMentionHandle, FileM
         } catch (error) {
           if (cancelled) return;
           verifiedPathsRef.current.add(filePath);
-          const err = error instanceof Error ? error : new Error(String(error ?? ''));
-          if (isFileMissingError(err)) {
+          if (isFileMissingError(error)) {
             setStaleRecentPaths((prev) => {
               if (prev.has(filePath)) return prev;
               const next = new Set(prev);
