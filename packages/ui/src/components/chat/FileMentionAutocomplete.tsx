@@ -15,9 +15,9 @@ import { useFilesViewShowGitignored } from '@/lib/filesViewShowGitignored';
 import { useI18n } from '@/lib/i18n';
 import { useUIStore } from '@/stores/useUIStore';
 import { useMobileAutocompleteMaxHeight } from './useMobileAutocompleteMaxHeight';
+import { isFileMissingError } from '@/lib/api/files-errors';
 import {
   filterStaleRecentFiles,
-  isFileMissingError,
   mentionServerQuery,
   rankFileMentionResults,
 } from './fileMentionResults';
@@ -72,6 +72,7 @@ export const FileMentionAutocomplete = React.forwardRef<FileMentionHandle, FileM
   const { files: filesApi } = useRuntimeAPIs();
   const removeOpenPathsByPrefix = useFilesViewTabsStore((state) => state.removeOpenPathsByPrefix);
   const [staleRecentPaths, setStaleRecentPaths] = React.useState<ReadonlySet<string>>(() => new Set());
+  const verifiedPathsRef = React.useRef<Set<string>>(new Set());
   const getVisibleAgents = useConfigStore((state) => state.getVisibleAgents);
   const searchFiles = useFileSearchStore((state) => state.searchFiles);
   const debouncedQuery = useDebouncedValue(searchQuery, 180);
@@ -97,6 +98,7 @@ export const FileMentionAutocomplete = React.forwardRef<FileMentionHandle, FileM
 
   React.useEffect(() => {
     setStaleRecentPaths(new Set());
+    verifiedPathsRef.current.clear();
   }, [projectRoot]);
 
   React.useEffect(() => {
@@ -141,19 +143,31 @@ export const FileMentionAutocomplete = React.forwardRef<FileMentionHandle, FileM
     return mapped;
   }, [normalizedSearchQuery, projectRoot, projectTabs]);
 
+  const recentCandidatePathsKey = React.useMemo(
+    () => recentFiles.map((file) => file.path).join('\n'),
+    [recentFiles],
+  );
+
   React.useEffect(() => {
-    if (!projectRoot || !filesApi?.statFile || recentFiles.length === 0) {
+    if (!projectRoot || !filesApi?.statFile || recentCandidatePathsKey.length === 0) {
+      return;
+    }
+
+    const candidatePaths = recentCandidatePathsKey.split('\n').filter(Boolean);
+    const unverifiedCandidates = candidatePaths.filter((path) => !verifiedPathsRef.current.has(path));
+    if (unverifiedCandidates.length === 0) {
       return;
     }
 
     let cancelled = false;
-    const candidates = recentFiles.map((file) => file.path);
 
     void Promise.all(
-      candidates.map(async (filePath) => {
+      unverifiedCandidates.map(async (filePath) => {
         try {
           const stat = await filesApi.statFile?.(filePath, { directory: projectRoot });
-          if (!cancelled && stat && !stat.isFile) {
+          if (cancelled) return;
+          verifiedPathsRef.current.add(filePath);
+          if (stat && !stat.isFile) {
             setStaleRecentPaths((prev) => {
               if (prev.has(filePath)) return prev;
               const next = new Set(prev);
@@ -163,8 +177,10 @@ export const FileMentionAutocomplete = React.forwardRef<FileMentionHandle, FileM
             removeOpenPathsByPrefix(projectRoot, filePath);
           }
         } catch (error) {
+          if (cancelled) return;
+          verifiedPathsRef.current.add(filePath);
           const err = error instanceof Error ? error : new Error(String(error ?? ''));
-          if (!cancelled && isFileMissingError(err)) {
+          if (isFileMissingError(err)) {
             setStaleRecentPaths((prev) => {
               if (prev.has(filePath)) return prev;
               const next = new Set(prev);
@@ -180,7 +196,7 @@ export const FileMentionAutocomplete = React.forwardRef<FileMentionHandle, FileM
     return () => {
       cancelled = true;
     };
-  }, [filesApi, projectRoot, recentFiles, removeOpenPathsByPrefix]);
+  }, [filesApi, projectRoot, recentCandidatePathsKey, removeOpenPathsByPrefix]);
 
   const visibleAgents = React.useMemo(
     () => normalizedSearchQuery.length > 0 ? agents : agents.slice(0, 2),

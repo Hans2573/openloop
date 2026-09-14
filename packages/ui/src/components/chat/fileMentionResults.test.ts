@@ -2,7 +2,6 @@ import { describe, expect, test } from 'bun:test';
 
 import {
   filterStaleRecentFiles,
-  isFileMissingError,
   mentionServerQuery,
   rankFileMentionResults,
   tokenizeMentionQuery,
@@ -55,21 +54,6 @@ describe('rankFileMentionResults', () => {
     const ranked = rankFileMentionResults([hit('a/readme.md')], [hit('a/')], 'a');
     expect(ranked.find((entry) => entry.relativePath === 'a/')?.kind).toBe('directory');
     expect(ranked.find((entry) => entry.relativePath === 'a/readme.md')?.kind).toBe('file');
-  });
-});
-
-describe('isFileMissingError', () => {
-  test('recognizes missing file errors and codes', () => {
-    expect(isFileMissingError(new Error('ENOENT: no such file or directory'))).toBe(true);
-    expect(isFileMissingError(new Error('File not found'))).toBe(true);
-    expect(isFileMissingError(new Error('Specified file does not exist'))).toBe(true);
-    expect(isFileMissingError({ message: 'ENOENT' })).toBe(true);
-  });
-
-  test('does not match unrelated errors', () => {
-    expect(isFileMissingError(new Error('EACCES: permission denied'))).toBe(false);
-    expect(isFileMissingError(new Error('Network error'))).toBe(false);
-    expect(isFileMissingError({ message: 'Timed out' })).toBe(false);
   });
 });
 

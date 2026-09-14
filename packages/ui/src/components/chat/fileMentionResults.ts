@@ -59,15 +59,6 @@ export function rankFileMentionResults(
   );
 }
 
-export const isFileMissingError = (error: Error | { message?: string }): boolean => {
-  const message = error instanceof Error ? error.message : (error.message ?? '');
-  const normalized = message.toLowerCase();
-  return normalized.includes('file not found')
-    || normalized.includes('enoent')
-    || normalized.includes('no such file')
-    || normalized.includes('does not exist');
-};
-
 export function filterStaleRecentFiles<T extends { path: string }>(
   files: readonly T[],
   stalePaths: ReadonlySet<string>,
