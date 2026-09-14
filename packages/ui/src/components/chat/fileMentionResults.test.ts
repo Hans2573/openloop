@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 
-import { mentionServerQuery, rankFileMentionResults, tokenizeMentionQuery } from './fileMentionResults';
+import {
+  filterStaleRecentFiles,
+  isFileMissingError,
+  mentionServerQuery,
+  rankFileMentionResults,
+  tokenizeMentionQuery,
+} from './fileMentionResults';
 
 const hit = (relativePath: string) => {
   const name = relativePath.split('/').filter(Boolean).pop() ?? relativePath;
@@ -49,5 +55,34 @@ describe('rankFileMentionResults', () => {
     const ranked = rankFileMentionResults([hit('a/readme.md')], [hit('a/')], 'a');
     expect(ranked.find((entry) => entry.relativePath === 'a/')?.kind).toBe('directory');
     expect(ranked.find((entry) => entry.relativePath === 'a/readme.md')?.kind).toBe('file');
+  });
+});
+
+describe('isFileMissingError', () => {
+  test('recognizes missing file errors and codes', () => {
+    expect(isFileMissingError(new Error('ENOENT: no such file or directory'))).toBe(true);
+    expect(isFileMissingError(new Error('File not found'))).toBe(true);
+    expect(isFileMissingError(new Error('Specified file does not exist'))).toBe(true);
+    expect(isFileMissingError({ message: 'ENOENT' })).toBe(true);
+  });
+
+  test('does not match unrelated errors', () => {
+    expect(isFileMissingError(new Error('EACCES: permission denied'))).toBe(false);
+    expect(isFileMissingError(new Error('Network error'))).toBe(false);
+    expect(isFileMissingError({ message: 'Timed out' })).toBe(false);
+  });
+});
+
+describe('filterStaleRecentFiles', () => {
+  test('returns all files when stale set is empty', () => {
+    const items = [hit('file1.ts'), hit('file2.ts')];
+    expect(filterStaleRecentFiles(items, new Set())).toEqual(items);
+  });
+
+  test('filters out paths present in the stale set', () => {
+    const file1 = hit('file1.ts');
+    const file2 = hit('file2.ts');
+    const stale = new Set([file1.path]);
+    expect(filterStaleRecentFiles([file1, file2], stale)).toEqual([file2]);
   });
 });
