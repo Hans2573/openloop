@@ -1,0 +1,32 @@
+packages/ui/src/components/chat/FileMentionAutocomplete.tsx
+  s_f65518d1feac73::t_e6fb806127f437 243,268
+  s_f65518d1feac73::t_a9031a464d3499 72-74,97-107,143-184,189-191
+  s_f65518d1feac73::t_df2d614961e1eb 338
+  s_f65518d1feac73::t_421a8aecf04ca8 9,18-23
+  s_f65518d1feac73::t_d94152b4a1aa9d 192
+packages/ui/src/components/chat/__tests__/fileMentionStaleFiles.test.ts
+  s_f65518d1feac73::t_7e60ecde080553 1-71,73-87
+  s_f65518d1feac73::t_9b516390a1ed4b 72
+packages/ui/src/components/chat/fileMentionResults.ts
+  s_f65518d1feac73::t_23ee0844802e3b 61,64-80
+  s_f65518d1feac73::t_dc5e3574beda3c 62-63
+packages/ui/src/components/chat/fileMentionResults.test.ts
+  s_f65518d1feac73::t_31c912925fc84b 3-9
+  s_f65518d1feac73::t_a0752a0b66a855 60-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "2f2d6efe56906fe0e13c56fcff5edf942342a60f",
+  "prompts": {},
+  "sessions": {
+    "s_f65518d1feac73": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f71984924ffeq52Zgx6emKT59Y",
+        "model": "unknown"
+      },
+      "human_author": "Hans2573 <hangkees@aliyun.com>"
+    }
+  }
+}
